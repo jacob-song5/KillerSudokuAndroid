@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity
         Button b = (Button)v;
         String num = (String)b.getText();
         display.onNumClick(num);
+        updateNumButtons();
     }
 
     public void onNewGameClick(View v)
@@ -52,6 +53,26 @@ public class MainActivity extends AppCompatActivity
         Button noteButton = findViewById(R.id.noteButton);
         noteButton.setBackgroundColor(defaultButtonColor);
         display.resetGame();
+
+        Button b;
+        b = findViewById(R.id.button1);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button2);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button3);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button4);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button5);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button6);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button7);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button8);
+        b.setVisibility(Button.VISIBLE);
+        b = findViewById(R.id.button9);
+        b.setVisibility(Button.VISIBLE);
     }
 
     public void toggleNoteMode(View v)
@@ -68,10 +89,38 @@ public class MainActivity extends AppCompatActivity
     public void onEraseClick(View v)
     {
         display.onEraseClick();
+        updateNumButtons();
     }
 
     public void onHintClick(View v)
     {
         display.onHintClick();
+        updateNumButtons();
+    }
+
+    private void updateNumButtons()
+    {
+        List<Integer> quantities = display.getNumCounts();
+        List<Integer> buttonIds = new ArrayList<>(Arrays.asList(
+            R.id.button1,
+            R.id.button2,
+            R.id.button3,
+            R.id.button4,
+            R.id.button5,
+            R.id.button6,
+            R.id.button7,
+            R.id.button8,
+            R.id.button9
+        ));
+        for (int i = 0; i < 9; ++i)
+        {
+            Button b = findViewById(buttonIds.get(i));
+
+            if (quantities.get(i) == 9)
+                b.setVisibility(Button.INVISIBLE);
+
+            else
+                b.setVisibility(Button.VISIBLE);
+        }
     }
 }

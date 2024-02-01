@@ -93,6 +93,11 @@ public class Board
         return this.board.get(y).get(x);
     }
 
+    public Cell getCell(Cell c)
+    {
+        return getCell(c.x, c.y);
+    }
+
     public void addZone(Zone z)
     {
         this.zones.add(z);
@@ -263,17 +268,6 @@ public class Board
         return null;
     }
 
-    // Are two cells from the same zone?
-    public boolean sameZone(Cell i, Cell j)
-    {
-        for (Zone z : this.zones)
-        {
-            if (z.contains(i))
-                return z.contains(j);
-        }
-        return false;
-    }
-
     // Divides all cells into randomly generated zones
     public void setBoardZones()
     {
@@ -349,6 +343,11 @@ public class Board
         return total;
     }
 
+    public int quantityOfNumber(String num)
+    {
+        return quantityOfNumber(Integer.valueOf(num));
+    }
+
     // true if any cells collide
     private boolean checkCollisionCells(Cell c)
     {
@@ -385,95 +384,6 @@ public class Board
         }
 
         return false;
-    }
-
-    // Fixes the first occurrence of linked zones found.
-    // Currently only works for 2x1 aligned zones.
-    // BUG: if three zones are aligned but only two are linked, this will not fix any zones
-    private boolean fixLinkedZones()
-    {
-        for (int i = 0; i < zones.size(); ++i)
-        {
-            Zone z = zones.get(i);
-            List<Zone> alignedZones = new ArrayList<>();
-            alignedZones.add(z);
-
-            for (Zone j : zones)
-            {
-                if (z.equals(j))
-                    continue;
-
-                if (twoZonesAreAligned(z, j))
-                    alignedZones.add(j);
-            }
-
-            if (alignedZones.size() > 1 && zonesHaveLinkedValues(alignedZones))
-            {
-                zones.remove(z);
-                System.out.printf("Old zone: %s%n", z);
-                for (Cell c : z.cells)
-                {
-                    Zone newZone = new Zone();
-                    newZone.add(c);
-                    zones.add(newZone);
-                    zoneAttrition(newZone);
-                    System.out.printf("New zone: %s%n", newZone);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Currently only works on 2x1 zones
-    private static boolean twoZonesAreAligned(Zone one, Zone two)
-    {
-        if (one.cells.size() != 2 || two.cells.size() != 2)
-            return false;
-
-        // one is vertical
-        if (one.cells.get(0).x == one.cells.get(1).x)
-        {
-            // two is on the same rows as one
-            HashSet<Integer> oneCells = new HashSet<>();
-            HashSet<Integer> twoCells = new HashSet<>();
-            for (Cell c : one.cells)
-                oneCells.add(c.y);
-            for (Cell c : two.cells)
-                twoCells.add(c.y);
-
-            return oneCells.equals(twoCells);
-        }
-
-        // one is horizontal
-        else
-        {
-            // two is on the same columns as one
-            HashSet<Integer> oneCells = new HashSet<>();
-            HashSet<Integer> twoCells = new HashSet<>();
-            for (Cell c : one.cells)
-                oneCells.add(c.x);
-            for (Cell c : two.cells)
-                twoCells.add(c.x);
-
-            return oneCells.equals(twoCells);
-        }
-    }
-
-    // If there are more unique values in the zones than zones themselves, there is no loop and there should only be one solution for those zones.
-    private static boolean zonesHaveLinkedValues(List<Zone> zones)
-    {
-        HashSet<Integer> uniqueValues = new HashSet<>();
-
-        for (Zone z : zones)
-        {
-            for (Cell c : z.cells)
-            {
-                uniqueValues.add(c.value);
-            }
-        }
-
-        return uniqueValues.size() == zones.size();
     }
 
     private void fixLinkedCells()
@@ -665,7 +575,7 @@ public class Board
             uniqueValues.add(newCellTwo.value);
         }
 
-        return uniqueValues.size() == (size / 2);
+        return uniqueValues.size() <= (size / 2);
     }
 
     private static boolean containsReveal(List<Cell> cells)
