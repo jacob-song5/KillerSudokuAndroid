@@ -29,8 +29,12 @@ public class Cell
 
     public void fullPrint()
     {
-        String output = String.format("(%s,%s)=%s", this.x+1, this.y+1, this.value);
-        System.out.println(output);
+        System.out.println(fullPrintString());
+    }
+
+    public String fullPrintString()
+    {
+        return String.format("(%s,%s)=%s", this.x+1, this.y+1, this.value);
     }
 
     // Checks if two cells are from the same zone

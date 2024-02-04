@@ -82,7 +82,7 @@ public class GameDisplay
         this.board = new Board(boardString);
         this.userBoard = new Board("");
 
-        //this.board.simplePrint();
+        // this.board.simplePrint();
 
         this.cellBorder = act.getDrawable(R.drawable.border);
         this.noteMode = false;
@@ -144,7 +144,9 @@ public class GameDisplay
 
         this.boardString = getNewGameString();
         board = new Board(boardString);
-        //board.simplePrint();
+
+        // board.simplePrint();
+
         board.setBoardZones();
         resetCellLayouts();
         setAllCages();

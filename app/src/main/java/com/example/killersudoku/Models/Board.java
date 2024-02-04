@@ -399,70 +399,7 @@ public class Board
                 Cell left = getCell(x, y);
                 Cell right = getCell(x+1, y);
 
-                if (!left.isNeighbor(right))
-                    continue;
-
-                List<Cell> linkedCells = new ArrayList<>();
-                linkedCells.add(left);
-                linkedCells.add(right);
-
-                for (int i = 0; i < 9; ++i)
-                {
-                    if (i == y)
-                        continue;
-
-                    Cell otherLeft = getCell(x, i);
-                    Cell otherRight = getCell(x+1, i);
-
-                    if (!otherLeft.isNeighbor(otherRight))
-                        continue;
-
-                    // If no new linked pair has been found yet, check to see if this pair is linked with the original pair
-                    // Otherwise, check if the new pair is linked with ALL of the found linked pairs
-                    boolean check = linkedCells.size() == 2
-                            ? cellsAreLinked(left, right, otherLeft, otherRight)
-                            : cellsHaveLinkedValues(linkedCells, otherLeft, otherRight);
-
-                    if (check)
-                    {
-                        linkedCells.add(otherLeft);
-                        linkedCells.add(otherRight);
-                    }
-                }
-
-                if (linkedCells.size() > 2 && cellsHaveLinkedValues(linkedCells, null, null) && !containsReveal(linkedCells))
-                {
-                    /*
-                    System.out.println("Linked cells found.");
-                    for (Cell c : linkedCells)
-                    {
-                        c.fullPrint();
-                    }
-                    System.out.println("end");
-                    */
-
-                    Board newBoard = new Board(this);
-                    // Iterate over the pairs
-                    for (int i = 0; i < linkedCells.size(); i += 2)
-                    {
-                        Cell oldLeft = linkedCells.get(i);
-                        Cell oldRight = linkedCells.get(i+1);
-                        Cell newLeft = newBoard.getCell(oldLeft.x, oldLeft.y);
-                        Cell newRight = newBoard.getCell(oldRight.x, oldRight.y);
-
-                        int swap = newLeft.value;
-                        newLeft.value = newRight.value;
-                        newRight.value = swap;
-                    }
-
-                    if (newBoard.checkSolution())
-                    {
-                        // System.out.println("Linked pair has multiple solutions.");
-                        Cell revealer = linkedCells.get(0);
-                        Cell boardAlter = getCell(revealer.x, revealer.y);
-                        boardAlter.reveal = true;
-                    }
-                }
+                checkCellPairForLoops(left, right, true);
             }
         }
 
@@ -471,76 +408,13 @@ public class Board
         for (int y = 0; y < 8; ++y)
         {
             // Compare each row (y) against every other row to find linked values
-            // Left and right cells of pairs HAVE to come from the same zone, as separated zones would indicate a separate way to solve the loop
+            // Top and bottom cells of pairs HAVE to come from the same zone, as separate zones would indicate a separate way to solve the loop
             for (int x = 0; x < 9; ++x)
             {
                 Cell up = getCell(x, y);
                 Cell down = getCell(x, y+1);
 
-                if (!up.isNeighbor(down))
-                    continue;
-
-                List<Cell> linkedCells = new ArrayList<>();
-                linkedCells.add(up);
-                linkedCells.add(down);
-
-                for (int i = 0; i < 9; ++i)
-                {
-                    if (i == x)
-                        continue;
-
-                    Cell otherUp = getCell(i, y);
-                    Cell otherDown = getCell(i, y+1);
-
-                    if (!otherUp.isNeighbor(otherDown))
-                        continue;
-
-                    // If no new linked pair has been found yet, check to see if this pair is linked with the original pair
-                    // Otherwise, check if the new pair is linked with ALL of the found linked pairs
-                    boolean check = linkedCells.size() == 2
-                            ? cellsAreLinked(up, down, otherUp, otherDown)
-                            : cellsHaveLinkedValues(linkedCells, otherUp, otherDown);
-
-                    if (check)
-                    {
-                        linkedCells.add(otherUp);
-                        linkedCells.add(otherDown);
-                    }
-                }
-
-                if (linkedCells.size() > 2 && cellsHaveLinkedValues(linkedCells, null, null) && !containsReveal(linkedCells))
-                {
-                    /*
-                    System.out.println("Linked cells found.");
-                    for (Cell c : linkedCells)
-                    {
-                        c.fullPrint();
-                    }
-                    System.out.println("end");
-                    */
-
-                    Board newBoard = new Board(this);
-                    // Iterate over the pairs
-                    for (int i = 0; i < linkedCells.size(); i += 2)
-                    {
-                        Cell oldUp = linkedCells.get(i);
-                        Cell oldDown = linkedCells.get(i+1);
-                        Cell newUp = newBoard.getCell(oldUp.x, oldUp.y);
-                        Cell newDown = newBoard.getCell(oldDown.x, oldDown.y);
-
-                        int swap = newUp.value;
-                        newUp.value = newDown.value;
-                        newDown.value = swap;
-                    }
-
-                    if (newBoard.checkSolution())
-                    {
-                        // System.out.println("Linked pair has multiple solutions.");
-                        Cell revealer = linkedCells.get(0);
-                        Cell boardAlter = getCell(revealer.x, revealer.y);
-                        boardAlter.reveal = true;
-                    }
-                }
+                checkCellPairForLoops(up, down, false);
             }
         }
     }
@@ -558,6 +432,7 @@ public class Board
         return uniqueValues.size() < 4;
     }
 
+    // Call with null values for extra cells if you want to see if the loop is closed.
     // Assumes that cells are brought in aligned pairs (2x1's)
     // NEVER call this with newCellOne being null and newCellTwo having a value or vice versa
     private static boolean cellsHaveLinkedValues(List<Cell> cells, Cell newCellOne, Cell newCellTwo)
@@ -575,7 +450,195 @@ public class Board
             uniqueValues.add(newCellTwo.value);
         }
 
-        return uniqueValues.size() <= (size / 2);
+        if (size < 4)
+            return false;
+
+        int checkValue = newCellOne == null ? (size / 2) : (size / 2 ) + 1;
+
+        return uniqueValues.size() == checkValue;
+    }
+
+    private void checkCellPairForLoops(Cell first, Cell second, boolean horizontal)
+    {
+        if (!first.isNeighbor(second))
+            return;
+
+        if (first.reveal || second.reveal)
+            return;
+
+        List<Cell> linkedCells = new ArrayList<>();
+        // [row/column index] = [first, second cells]
+        HashMap<Integer, List<Cell>> uncheckedCells = new HashMap<>();
+        linkedCells.add(first);
+        linkedCells.add(second);
+
+        // Different horizontal pairs have the same x value, but different y values
+        int check = horizontal ? first.y : first.x;
+
+        /*
+        for (int i = 0; i < 9; ++i)
+        {
+            if (i == check)
+                continue;
+
+            Cell otherFirst = horizontal ? getCell(first.x, i) : getCell(i, first.y);
+            Cell otherSecond = horizontal ? getCell(second.x, i) : getCell(i, second.y);
+
+            uncheckedCells.put(i, new ArrayList<Cell>());
+            uncheckedCells.get(i).add(otherFirst);
+            uncheckedCells.get(i).add(otherSecond);
+        }
+        */
+
+        // Find the FIRST linked pair
+        for (int i = 0; i < 9; ++i)
+        {
+            if (i == check)
+                continue;
+
+            Cell otherFirst = horizontal ? getCell(first.x, i) : getCell(i, first.y);
+            Cell otherSecond = horizontal ? getCell(second.x, i) : getCell(i, second.y);
+
+            if (!otherFirst.isNeighbor(otherSecond))
+                continue;
+
+            if (cellsAreLinked(first, second, otherFirst, otherSecond))
+            {
+                linkedCells.add(otherFirst);
+                linkedCells.add(otherSecond);
+                //break;
+            }
+            else
+            {
+                uncheckedCells.put(i, new ArrayList<Cell>());
+                uncheckedCells.get(i).add(otherFirst);
+                uncheckedCells.get(i).add(otherSecond);
+            }
+        }
+
+        // If two pairs are linked, keep checking all other pairs in the row/column until you close the loop
+        if (linkedCells.size() > 2)
+        {
+            /*
+            System.out.println("Initial linkedCells");
+            for (Cell c : linkedCells)
+            {
+                c.fullPrint();
+            }
+            */
+
+            // Shouldn't be possible to run out of unchecked pairs, but it's here for posterity
+            while (uncheckedCells.size() > 0 && !cellsHaveLinkedValues(linkedCells, null, null))
+            {
+                int startSize = linkedCells.size();
+                List<Integer> toRemove = new ArrayList<>();
+
+                for (Integer i : uncheckedCells.keySet())
+                {
+                    Cell uncheckedFirst = uncheckedCells.get(i).get(0);
+                    Cell uncheckedSecond = uncheckedCells.get(i).get(1);
+
+                    // Do NOT remove the pair if it isn't linked, as it may be only be linked AFTER a different pair has been added to linkedCells
+                    if (cellsHaveLinkedValues(linkedCells, uncheckedFirst, uncheckedSecond))
+                    {
+                        // System.out.println("LINKED");
+                        // System.out.printf("uncheckedFirst: %s%n", uncheckedFirst.fullPrintString());
+                        // System.out.printf("uncheckedSecond:%s%n", uncheckedSecond.fullPrintString());
+
+                        linkedCells.add(uncheckedFirst);
+                        linkedCells.add(uncheckedSecond);
+                        toRemove.add(i);
+                    }
+                }
+                // If none of the unchecked pairs are linked, break out of the loop
+                if (linkedCells.size() == startSize)
+                    break;
+
+                // Remove the newly discovered linked pairs from the unchecked pairs
+                for (Integer i : toRemove)
+                    uncheckedCells.remove(i);
+
+                /*
+                try
+                {
+                    Thread.sleep(5000);
+                } catch (Exception e)
+                {
+                    ;
+                }
+                */
+            }
+
+            /*
+            System.out.println("Final linkedCells");
+            for (Cell c : linkedCells)
+            {
+                c.fullPrint();
+            }
+            */
+        }
+
+        /*
+        // IF LOOP IS NOT CLOSED
+        if (linkedCells.size() == 4 && !cellsHaveLinkedValues(linkedCells, null, null))
+        {
+            // Find the rest of the linked pairs
+            for (int i = 0; i < 9; ++i)
+            {
+                if (i == check)
+                    continue;
+
+                Cell otherFirst = horizontal ? getCell(first.x, i) : getCell(i, first.y);
+                Cell otherSecond = horizontal ? getCell(second.x, i) : getCell(i, second.y);
+
+                if (!otherFirst.isNeighbor(otherSecond))
+                    continue;
+
+                if (linkedCellsContainsCell(linkedCells, otherFirst))
+                    continue;
+
+                if (cellsHaveLinkedValues(linkedCells, otherFirst, otherSecond))
+                {
+                    linkedCells.add(otherFirst);
+                    linkedCells.add(otherSecond);
+                }
+            }
+        }
+        */
+
+        // Reveal a cell to converge the loop (if necessary)
+        if (linkedCells.size() > 2 && cellsHaveLinkedValues(linkedCells, null, null) && !containsReveal(linkedCells))
+        {
+            /*
+            if (linkedCells.size() > 4)
+            {
+                System.out.println("Taking action to converge 3+ pair loop");
+                for (Cell c : linkedCells)
+                    c.fullPrint();
+            }
+            */
+
+            Board newBoard = new Board(this);
+            // If swapping the values of the cells of each pair still creates a valid solution, reveal the first linked cell's value to the user
+            for (int i = 0; i < linkedCells.size(); i += 2)
+            {
+                Cell oldUp = linkedCells.get(i);
+                Cell oldDown = linkedCells.get(i+1);
+                Cell newUp = newBoard.getCell(oldUp.x, oldUp.y);
+                Cell newDown = newBoard.getCell(oldDown.x, oldDown.y);
+
+                int swap = newUp.value;
+                newUp.value = newDown.value;
+                newDown.value = swap;
+            }
+
+            if (newBoard.checkSolution())
+            {
+                Cell revealer = linkedCells.get(0);
+                Cell boardAlter = getCell(revealer.x, revealer.y);
+                boardAlter.reveal = true;
+            }
+        }
     }
 
     private static boolean containsReveal(List<Cell> cells)
@@ -587,4 +650,15 @@ public class Board
         }
         return false;
     }
+
+    private static boolean linkedCellsContainsCell(List<Cell> linkedCells, Cell cell)
+    {
+        for (Cell c : linkedCells)
+        {
+            if (c.x == cell.x && c.y == cell.y)
+                return true;
+        }
+        return false;
+    }
+
 }
