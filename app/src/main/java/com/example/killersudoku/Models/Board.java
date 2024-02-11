@@ -455,7 +455,7 @@ public class Board
 
         int checkValue = newCellOne == null ? (size / 2) : (size / 2 ) + 1;
 
-        return uniqueValues.size() == checkValue;
+        return uniqueValues.size() <= checkValue;
     }
 
     private void checkCellPairForLoops(Cell first, Cell second, boolean horizontal)
@@ -485,6 +485,9 @@ public class Board
             Cell otherSecond = horizontal ? getCell(second.x, i) : getCell(i, second.y);
 
             if (!otherFirst.isNeighbor(otherSecond))
+                continue;
+
+            if (otherFirst.reveal || otherSecond.reveal)
                 continue;
 
             if (cellsAreLinked(first, second, otherFirst, otherSecond))
@@ -517,6 +520,9 @@ public class Board
                     // Do NOT remove the pair if it isn't linked, as it may be linked AFTER a different pair has been added to linkedCells
                     if (cellsHaveLinkedValues(linkedCells, uncheckedFirst, uncheckedSecond))
                     {
+                        // This loop has already been solved
+                        if (uncheckedFirst.reveal || uncheckedSecond.reveal)
+                            return;
                         linkedCells.add(uncheckedFirst);
                         linkedCells.add(uncheckedSecond);
                         toRemove.add(i);
@@ -530,30 +536,30 @@ public class Board
                 for (Integer i : toRemove)
                     uncheckedCells.remove(i);
             }
-        }
 
-        // Reveal a cell to converge the loop (if necessary)
-        if (linkedCells.size() > 2 && cellsHaveLinkedValues(linkedCells, null, null) && !containsReveal(linkedCells))
-        {
-            Board newBoard = new Board(this);
-            // If swapping the values of the cells of each pair still creates a valid solution, reveal the first linked cell's value to the user
-            for (int i = 0; i < linkedCells.size(); i += 2)
+            // Reveal a cell to converge the loop (if necessary)
+            if (cellsHaveLinkedValues(linkedCells, null, null) && !containsReveal(linkedCells))
             {
-                Cell oldUp = linkedCells.get(i);
-                Cell oldDown = linkedCells.get(i+1);
-                Cell newUp = newBoard.getCell(oldUp.x, oldUp.y);
-                Cell newDown = newBoard.getCell(oldDown.x, oldDown.y);
+                Board newBoard = new Board(this);
+                // If swapping the values of the cells of each pair still creates a valid solution, reveal the first linked cell's value to the user
+                for (int i = 0; i < linkedCells.size(); i += 2)
+                {
+                    Cell oldUp = linkedCells.get(i);
+                    Cell oldDown = linkedCells.get(i + 1);
+                    Cell newUp = newBoard.getCell(oldUp.x, oldUp.y);
+                    Cell newDown = newBoard.getCell(oldDown.x, oldDown.y);
 
-                int swap = newUp.value;
-                newUp.value = newDown.value;
-                newDown.value = swap;
-            }
+                    int swap = newUp.value;
+                    newUp.value = newDown.value;
+                    newDown.value = swap;
+                }
 
-            if (newBoard.checkSolution())
-            {
-                Cell revealer = linkedCells.get(0);
-                Cell boardAlter = getCell(revealer.x, revealer.y);
-                boardAlter.reveal = true;
+                if (newBoard.checkSolution())
+                {
+                    Cell revealer = linkedCells.get(0);
+                    Cell boardAlter = getCell(revealer.x, revealer.y);
+                    boardAlter.reveal = true;
+                }
             }
         }
     }
