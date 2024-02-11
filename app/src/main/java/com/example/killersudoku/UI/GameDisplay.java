@@ -241,8 +241,13 @@ public class GameDisplay
         if (selectedCell == null)
             return;
 
-        setCellValue(selectedCell, Integer.toString(selectedCell.value));
-        userBoard.getCell(selectedCell).value = selectedCell.value;
+        setCellValue(selectedCell, selectedCell.value);
+
+        Cell userCell = userBoard.getCell(selectedCell);
+        userCell.value = selectedCell.value;
+        userCell.valid = true;
+        cellLayouts.get(userCell.y).get(userCell.x).setBackgroundColor(CELL_HIGHLIGHTED_COLOR);
+
         clearNumberFromNotes(selectedCell);
     }
 
@@ -485,6 +490,7 @@ public class GameDisplay
         cs.applyTo(cl);
     }
 
+    // Sets the text value of the cell, NOT the model's value field
     private void setCellValue(Cell c, String value)
     {
         ConstraintLayout cl = cellLayouts.get(c.y).get(c.x);
