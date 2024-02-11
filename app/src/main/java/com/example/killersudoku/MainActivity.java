@@ -1,6 +1,7 @@
 package com.example.killersudoku;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
@@ -8,10 +9,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 //import androidx.gridlayout.widget.GridLayout;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.example.killersudoku.Models.*;
@@ -48,7 +51,30 @@ public class MainActivity extends AppCompatActivity
         updateNumButtons();
     }
 
+    // Spawns a confirmation popup window for starting a new game
     public void onNewGameClick(View v)
+    {
+        LayoutInflater inflater = (LayoutInflater)getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.new_game_confirmation, null);
+
+        int width = ConstraintLayout.LayoutParams.WRAP_CONTENT;
+        int height = ConstraintLayout.LayoutParams.WRAP_CONTENT;
+        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
+
+        popupWindow.showAtLocation(v, Gravity.CENTER, 0, 300);
+
+        Button yes = popupView.findViewById(R.id.yesOption);
+        yes.setOnClickListener((view) -> {
+            startNewGame(view);
+            popupWindow.dismiss();
+        });
+
+        Button no = popupView.findViewById(R.id.noOption);
+        no.setOnClickListener((view) -> popupWindow.dismiss());
+    }
+
+    // Resets button colors/visibilities and starts a new game in the model
+    public void startNewGame(View v)
     {
         Button noteButton = findViewById(R.id.noteButton);
         noteButton.setBackgroundColor(defaultButtonColor);

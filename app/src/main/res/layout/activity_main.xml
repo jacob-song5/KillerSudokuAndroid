@@ -6,18 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/newGameButton"
-        android:layout_width="125dp"
-        android:layout_height="71dp"
-        android:text="New Game"
-        android:backgroundTint="@color/seagreen"
-        android:onClick="onNewGameClick"
-        android:textColor="#FFFFFF"
-        app:cornerRadius="0px"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/boardLayout"
         android:layout_width="match_parent"
@@ -27,7 +15,7 @@
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/newGameButton">
+        app:layout_constraintTop_toTopOf="parent">
 
         <GridLayout
             android:id="@+id/topLeftGrid"
@@ -252,10 +240,21 @@
                 app:cornerRadius="0px" />
 
             <Button
+                android:id="@+id/newGameButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:backgroundTint="@color/seagreen"
+                android:onClick="onNewGameClick"
+                android:text="New"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="0px" />
+
+            <Button
                 android:id="@+id/hintButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="40"
+                android:layout_weight="20"
                 android:backgroundTint="@color/purple"
                 android:onClick="onHintClick"
                 android:text="Hint"
