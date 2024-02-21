@@ -68,6 +68,7 @@ public class Zone
         }
     }
 
+    // Only checks for matching coordinates, not value
     public boolean contains(Cell j)
     {
         if (j == null)
@@ -146,6 +147,7 @@ public class Zone
         return val.equals(zVal);
     }
 
+    // Sets zone ID string to list of all child cells' x,y coordinates
     private void updateId()
     {
         String name = "";

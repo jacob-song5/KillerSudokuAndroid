@@ -229,6 +229,17 @@
                 app:cornerRadius="0px" />
 
             <Button
+                android:id="@+id/newGameButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:backgroundTint="@color/purple"
+                android:onClick="onNewGameClick"
+                android:text="New"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="0px" />
+
+            <Button
                 android:id="@+id/noteButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -236,17 +247,6 @@
                 android:backgroundTint="@color/purple"
                 android:onClick="toggleNoteMode"
                 android:text="Note"
-                android:textColor="#FFFFFF"
-                app:cornerRadius="0px" />
-
-            <Button
-                android:id="@+id/newGameButton"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="20"
-                android:backgroundTint="@color/seagreen"
-                android:onClick="onNewGameClick"
-                android:text="New"
                 android:textColor="#FFFFFF"
                 app:cornerRadius="0px" />
 

@@ -56,6 +56,21 @@ public class Board
         }
     }
 
+    // Clones the zones of another board using the cells of this board
+    public void cloneZones(Board b)
+    {
+        for (Zone z : b.zones)
+        {
+            Zone newZone = new Zone();
+            for (Cell foreignCell : z.cells)
+            {
+                Cell nativeCell = getCell(foreignCell);
+                newZone.add(nativeCell);
+            }
+            this.zones.add(newZone);
+        }
+    }
+
     public boolean isFull()
     {
         for (int i = 0; i < 9; ++i)

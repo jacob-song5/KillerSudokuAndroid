@@ -88,6 +88,7 @@ public class GameDisplay
         this.noteMode = false;
 
         board.setBoardZones();
+        userBoard.cloneZones(board);
         initializeBoardGrid();
     }
 
@@ -148,6 +149,7 @@ public class GameDisplay
         // board.simplePrint();
 
         board.setBoardZones();
+        userBoard.cloneZones(board);
         resetCellLayouts();
         setAllCages();
         loadNotesForSolvedCombinations();
@@ -182,7 +184,7 @@ public class GameDisplay
             userCell.value = newValue;
 
             boolean cellValidity = userBoard.isCellValid(userCell);
-            boolean zoneValidity = checkCellAgainstZone(userCell);
+            boolean zoneValidity = zoneTotalIsValid(userCell);
 
             if (cellValidity && zoneValidity)
             {
@@ -583,10 +585,10 @@ public class GameDisplay
             }
         }
 
-        Zone containingZone = board.getZoneOfCell(c);
+        Zone containingZone = userBoard.getZoneOfCell(c);
         for (Cell cell : containingZone.cells)
         {
-            if (((cell.x != c.x) || (cell.y != c.y)) && userBoard.getCell(cell).value == 0)
+            if (((cell.x != c.x) || (cell.y != c.y)) && cell.value == 0)
                 removeNumFromCellNotes(cell.x, cell.y, c.value);
         }
     }
@@ -604,16 +606,6 @@ public class GameDisplay
         String oldNote = (String)t.getText();
         String newNote = oldNote.replace(String.valueOf(value), "");
         t.setText(newNote);
-    }
-
-    // true if cell is valid within zone
-    private boolean checkCellAgainstZone(Cell c)
-    {
-        Zone solutionZone = board.getZoneOfCell(c);
-        int userTotal = 0;
-        for (Cell solutionCell : solutionZone.cells)
-            userTotal += userBoard.getCell(solutionCell).value;
-        return userTotal <= solutionZone.getTotal();
     }
 
     // Fills in notes for zones with one single combination of values
@@ -719,6 +711,23 @@ public class GameDisplay
                 }
             }
         }
+    }
+
+    // Used to check if the user set values for all cells of a zone but the total doesn't add up to what the cage sum says it should.
+    // Therefore, this returns true if not all cells have been assigned values for the user zone.
+    private boolean zoneTotalIsValid(Cell userCell)
+    {
+        Zone userZone = userBoard.getZoneOfCell(userCell);
+        Zone solutionZone = board.getZoneOfCell(userCell);
+
+        int userTotal = 0;
+        for (Cell c : userZone.cells)
+        {
+            if (c.value == 0)
+                return true;
+            userTotal += c.value;
+        }
+        return userTotal == solutionZone.getTotal();
     }
 
     private enum WallSide
