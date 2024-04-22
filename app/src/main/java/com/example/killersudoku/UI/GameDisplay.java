@@ -162,26 +162,30 @@ public class GameDisplay
         if (selectedCell == null)
             return;
 
+        Cell userCell = userBoard.getCell(selectedCell);
+
         if (noteMode)
         {
+            if (userCell.valid && userCell.value > 0)
+                return;
+            
             setCellNote(selectedCell, num);
-            userBoard.getCell(selectedCell).value = 0;
+            userCell.value = 0;
         }
         else
         {
             int newValue = Integer.parseInt(num);
-            Cell userCell = userBoard.getCell(selectedCell);
 
-            if (userCell.value == newValue)
+            if (userCell.valid && userCell.value > 0)
                 return;
 
             setCellValue(selectedCell, num);
 
             if (userCell.value != 0)
-                highlightSameValueCells(userCell.value, false);
-            highlightSameValueCells(newValue, true);
+                highlightSameValueCells(userCell, false);
 
             userCell.value = newValue;
+            highlightSameValueCells(userCell, true);
 
             boolean cellValidity = userBoard.isCellValid(userCell);
             boolean zoneValidity = zoneTotalIsValid(userCell);
@@ -230,6 +234,8 @@ public class GameDisplay
 
         setCellValue(selectedCell, "");
         Cell c = userBoard.getCell(selectedCell);
+        if (c.value > 0)
+            highlightSameValueCells(c, false);
         c.value = 0;
         if (!c.valid)
         {
@@ -280,7 +286,7 @@ public class GameDisplay
         // Reset background of previous selected cell (unless that cell is invalid
         if (selectedCell != null)
         {
-            highlightSameValueCells(userBoard.getCell(selectedCell).value, false);
+            highlightSameValueCells(userBoard.getCell(selectedCell), false);
             if (userBoard.getCell(selectedCell).valid)
             {
                 ConstraintLayout previous = cellLayouts.get(selectedCell.y).get(selectedCell.x);
@@ -291,7 +297,7 @@ public class GameDisplay
         Cell newCell = userBoard.getCell(x, y);
         if (newCell.valid)
         {
-            highlightSameValueCells(newCell.value, true);
+            highlightSameValueCells(newCell, true);
             cellLayouts.get(y).get(x).setBackgroundColor(CELL_HIGHLIGHTED_COLOR);
         }
         selectedCell = board.getCell(x, y);
@@ -690,23 +696,24 @@ public class GameDisplay
         }
     }
 
-    private void highlightSameValueCells(int value, boolean highlight)
+    // Will not de-highlight the userCell itself
+    private void highlightSameValueCells(Cell userCell, boolean highlight)
     {
-        if (value == 0)
+        if (userCell.value == 0)
             return;
 
         for (int y = 0; y < 9; ++y)
         {
             for (int x = 0; x < 9; ++x)
             {
-                Cell userCell = userBoard.getCell(x, y);
-                if (userCell.valid && userCell.value == value)
+                Cell cell = userBoard.getCell(x, y);
+                if (cell.valid && cell.value == userCell.value)
                 {
                     ConstraintLayout cl = cellLayouts.get(y).get(x);
 
                     if (highlight)
                         cl.setBackgroundColor(SAME_VALUE_CELL_HIGHLIGHT_COLOR);
-                    else
+                    else if (x != userCell.x || y != userCell.y)
                         cl.setBackground(cellBorder);
                 }
             }

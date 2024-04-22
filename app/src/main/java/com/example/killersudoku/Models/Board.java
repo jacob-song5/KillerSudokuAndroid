@@ -401,6 +401,7 @@ public class Board
         return false;
     }
 
+    // Fixes multiple solutions for multiple adjacent pairs of cells that are linked into loops
     private void fixLinkedCells()
     {
         // HORIZONTAL
@@ -432,6 +433,12 @@ public class Board
                 checkCellPairForLoops(up, down, false);
             }
         }
+    }
+
+    // Fixes pairs of cells that sit in all combinations of 3 choose 2 across a row/column of 3x3 sections
+    private void fixCombinationCells()
+    {
+        // run some sort of check
     }
 
     // Two pairs of cells are linked they have only 2-3 unique values among them
