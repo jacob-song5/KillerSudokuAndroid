@@ -124,6 +124,12 @@ public class MainActivity extends AppCompatActivity
         updateNumButtons();
     }
 
+    public void onUndoClick(View v)
+    {
+        display.onUndoClick();
+        updateNumButtons();
+    }
+
     private void updateNumButtons()
     {
         List<Integer> quantities = display.getNumCounts();

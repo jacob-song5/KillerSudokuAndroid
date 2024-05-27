@@ -1,13 +1,10 @@
 package com.example.killersudoku.UI;
 
 import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.GridLayout;
 import android.widget.TextView;
 
@@ -16,14 +13,13 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 
 import com.example.killersudoku.Models.Board;
+import com.example.killersudoku.Models.BoardTracker;
 import com.example.killersudoku.Models.Cell;
 import com.example.killersudoku.Models.SolvedCombination;
 import com.example.killersudoku.Models.Zone;
 import com.example.killersudoku.R;
 
-import java.io.File;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -35,6 +31,7 @@ public class GameDisplay
     private final int CELL_NOTE_FONT_COLOR = Color.argb(255, 200, 200, 200);
     private final int CELL_HIGHLIGHTED_COLOR = Color.argb(255, 9, 61, 125);
     private final int SAME_VALUE_CELL_HIGHLIGHT_COLOR = Color.argb(255, 55, 55, 55);
+    private final int CELL_INVALID_HIGHLIGHT_COLOR = Color.argb(255, 191, 4, 29);
     private final int CELL_VALUE_FONT_SIZE = 24;
     private final int CELL_NOTE_FONT_SIZE = 14;
     private final int DASHED_LINE_WIDTH = 5;
@@ -69,10 +66,12 @@ public class GameDisplay
     private String boardString;
     private Board board;
     private Board userBoard;
+    // selectedCell is set to the SOLUTION BOARD cell
     private Cell selectedCell;
     private Drawable cellBorder;
     private boolean noteMode;
     private Random rand;
+    private BoardTracker boardTracker;
 
     public GameDisplay(AppCompatActivity act)
     {
@@ -90,6 +89,8 @@ public class GameDisplay
         board.setBoardZones();
         userBoard.cloneZones(board);
         initializeBoardGrid();
+
+        this.boardTracker = new BoardTracker(userBoard);
     }
 
     public void initializeBoardGrid()
@@ -143,7 +144,7 @@ public class GameDisplay
         noteMode = false;
         userBoard = new Board("");
 
-        this.boardString = getNewGameString();
+        boardString = getNewGameString();
         board = new Board(boardString);
 
         // board.simplePrint();
@@ -155,6 +156,7 @@ public class GameDisplay
         loadNotesForSolvedCombinations();
         markSingleCellZones();
         markRevealCells();
+        boardTracker = new BoardTracker(userBoard);
     }
 
     public void onNumClick(String num)
@@ -162,12 +164,18 @@ public class GameDisplay
         if (selectedCell == null)
             return;
 
+        boardTracker.saveBoardState(userBoard);
+
         Cell userCell = userBoard.getCell(selectedCell);
+        List<CellState> changedCells = new ArrayList<CellState>();
 
         if (noteMode)
         {
             if (userCell.valid && userCell.value > 0)
+            {
+                boardTracker.getLastBoardState();
                 return;
+            }
             
             setCellNote(selectedCell, num);
             userCell.value = 0;
@@ -177,8 +185,12 @@ public class GameDisplay
             int newValue = Integer.parseInt(num);
 
             if (userCell.valid && userCell.value > 0)
+            {
+                boardTracker.getLastBoardState();
                 return;
+            }
 
+            changedCells.add(getStateOfCell(userCell));
             setCellValue(selectedCell, num);
 
             if (userCell.value != 0)
@@ -193,7 +205,7 @@ public class GameDisplay
             if (cellValidity && zoneValidity)
             {
                 //  Clear the number from the notes of all relevant cells
-                clearNumberFromNotes(userCell);
+                changedCells.addAll(clearNumberFromNotes(userCell));
 
                 // Reset cell color to cyan if it was highlighted red before
                 cellLayouts.get(userCell.y).get(userCell.x).setBackgroundColor(CELL_HIGHLIGHTED_COLOR);
@@ -215,9 +227,11 @@ public class GameDisplay
             else
             {
                 ConstraintLayout cl = cellLayouts.get(selectedCell.y).get(selectedCell.x);
-                cl.setBackgroundColor(Color.argb(255, 191, 4, 29));
+                cl.setBackgroundColor(CELL_INVALID_HIGHLIGHT_COLOR);
                 userCell.valid = false;
             }
+
+            boardTracker.saveCellChanges(changedCells);
         }
     }
 
@@ -232,8 +246,15 @@ public class GameDisplay
         if (selectedCell == null)
             return;
 
+        boardTracker.saveBoardState(userBoard);
+        List<CellState> changedCells = new ArrayList<CellState>();
+
         setCellValue(selectedCell, "");
         Cell c = userBoard.getCell(selectedCell);
+
+        changedCells.add(getStateOfCell(c));
+        boardTracker.saveCellChanges(changedCells);
+
         if (c.value > 0)
             highlightSameValueCells(c, false);
         c.value = 0;
@@ -249,14 +270,20 @@ public class GameDisplay
         if (selectedCell == null)
             return;
 
-        setCellValue(selectedCell, selectedCell.value);
+        boardTracker.saveBoardState(userBoard);
+        List<CellState> changedCells = new ArrayList<CellState>();
 
         Cell userCell = userBoard.getCell(selectedCell);
+        changedCells.add(getStateOfCell(userCell));
+
+        setCellValue(selectedCell, selectedCell.value);
+
         userCell.value = selectedCell.value;
         userCell.valid = true;
         cellLayouts.get(userCell.y).get(userCell.x).setBackgroundColor(CELL_HIGHLIGHTED_COLOR);
 
-        clearNumberFromNotes(selectedCell);
+        changedCells.addAll(clearNumberFromNotes(selectedCell));
+        boardTracker.saveCellChanges(changedCells);
     }
 
     public List<Integer> getNumCounts()
@@ -276,6 +303,12 @@ public class GameDisplay
         return numCounts;
     }
 
+    public void onUndoClick()
+    {
+        revertBoard();
+        revertCells();
+    }
+
     private void onCellClick(View v)
     {
         String coord = (String)v.getTag();
@@ -283,6 +316,11 @@ public class GameDisplay
         int x = Character.getNumericValue(coord.charAt(0));
         int y = Character.getNumericValue(coord.charAt(1));
 
+        handleCellClick(x, y);
+    }
+
+    private void handleCellClick(int x, int y)
+    {
         // Reset background of previous selected cell (unless that cell is invalid
         if (selectedCell != null)
         {
@@ -501,9 +539,11 @@ public class GameDisplay
     // Sets the text value of the cell, NOT the model's value field
     private void setCellValue(Cell c, String value)
     {
+        String newValue = value.equals("0") ? "" : value;
+
         ConstraintLayout cl = cellLayouts.get(c.y).get(c.x);
         TextView t = cl.findViewById(R.id.cellValue);
-        t.setText(value);
+        t.setText(newValue);
         t.setTextSize(CELL_VALUE_FONT_SIZE);
         t.setTextColor(CELL_VALUE_FONT_COLOR);
         t.setTag(false);
@@ -514,6 +554,7 @@ public class GameDisplay
         setCellValue(c, String.valueOf(value));
     }
 
+    // Passing a value with multiple numbers will just set the note text without doing any removal/sorting logic
     private void setCellNote(Cell c, String value)
     {
         ConstraintLayout cl = cellLayouts.get(c.y).get(c.x);
@@ -521,7 +562,7 @@ public class GameDisplay
 
         String newNote;
 
-        if ((boolean)t.getTag())
+        if ((boolean)t.getTag() && value.length() == 1)
         {
             String oldNote = (String)t.getText();
             newNote = getNoteString(oldNote, value);
@@ -565,18 +606,29 @@ public class GameDisplay
     }
 
     // Removes c.value from the notes of all other relevant cells
-    private void clearNumberFromNotes(Cell c)
+    private List<CellState> clearNumberFromNotes(Cell c)
     {
+        List<CellState> cellStates = new ArrayList<CellState>();
+        CellState cs;
+
         if (c.value == 0)
-            return;
+            return cellStates;
 
         for (int i = 0; i < 9; ++i)
         {
             if (i != c.x && userBoard.getCell(i, c.y).value == 0)
-                removeNumFromCellNotes(i, c.y, c.value);
+            {
+                cs = removeNumFromCellNotes(i, c.y, c.value);
+                if (cs != null)
+                    cellStates.add(cs);
+            }
 
             if (i != c.y && userBoard.getCell(c.x, i).value == 0)
-                removeNumFromCellNotes(c.x, i, c.value);
+            {
+                cs = removeNumFromCellNotes(c.x, i, c.value);
+                if (cs != null)
+                    cellStates.add(cs);
+            }
         }
 
         int lowerX = (c.x / 3) * 3;
@@ -587,7 +639,11 @@ public class GameDisplay
             for (int x = lowerX; x < lowerX + 3; ++x)
             {
                 if ((x != c.x || y != c.y) && userBoard.getCell(x, y).value == 0)
-                    removeNumFromCellNotes(x, y, c.value);
+                {
+                    cs = removeNumFromCellNotes(x, y, c.value);
+                    if (cs != null)
+                        cellStates.add(cs);
+                }
             }
         }
 
@@ -595,23 +651,34 @@ public class GameDisplay
         for (Cell cell : containingZone.cells)
         {
             if (((cell.x != c.x) || (cell.y != c.y)) && cell.value == 0)
-                removeNumFromCellNotes(cell.x, cell.y, c.value);
+                {
+                    cs = removeNumFromCellNotes(cell.x, cell.y, c.value);
+                    if (cs != null)
+                        cellStates.add(cs);
+                }
         }
+
+        return cellStates;
     }
 
     // Removes a single number from a single cell's notes
-    private void removeNumFromCellNotes(int x, int y, int value)
+    private CellState removeNumFromCellNotes(int x, int y, int value)
     {
+        CellState cs = getStateOfCell(x, y);
         ConstraintLayout cl = cellLayouts.get(y).get(x);
         TextView t = cl.findViewById(R.id.cellValue);
 
         // Cell is not in note mode
         if (!(boolean)t.getTag())
-            return;
+            return null;
 
         String oldNote = (String)t.getText();
         String newNote = oldNote.replace(String.valueOf(value), "");
         t.setText(newNote);
+
+        if (newNote != oldNote)
+            return cs;
+        return null;
     }
 
     // Fills in notes for zones with one single combination of values
@@ -743,5 +810,78 @@ public class GameDisplay
         RIGHT,
         BOTTOM,
         LEFT
+    }
+
+    // Gets state of user cell
+    private CellState getStateOfCell(Cell c)
+    {
+        CellState cs = new CellState(c);
+
+        ConstraintLayout cl = cellLayouts.get(c.y).get(c.x);
+        TextView t = cl.findViewById(R.id.cellValue);
+
+        boolean noteMode = (boolean)t.getTag();
+
+        if (noteMode)
+        {
+            cs.mode = CellState.Mode.NOTE;
+            cs.noteValue = t.getText().toString();
+        }
+        else
+            cs.mode = CellState.Mode.VALUE;
+
+        return cs;
+    }
+
+    private CellState getStateOfCell(int x, int y)
+    {
+        Cell userCell = userBoard.getCell(x, y);
+        return getStateOfCell(userCell);
+    }
+
+    // Sets userBoard to its previous state since last action
+    private void revertBoard()
+    {
+        Cell currentCell;
+        Cell previousCell;
+        Board previousBoard = boardTracker.getLastBoardState();
+
+        if (previousBoard == null)
+            return;
+
+        userBoard = new Board(previousBoard);
+        userBoard.cloneZones(previousBoard);
+    }
+
+    // Sets the cell UIs to their previous state since last action
+    private void revertCells()
+    {
+        List<CellState> cellStates = boardTracker.getLastCellChanges();
+
+        for (CellState cs : cellStates)
+        {
+            // Only used as holder for x,y. Current value/board state doesn't matter
+            Cell userCell = userBoard.getCell(cs.x, cs.y);
+            ConstraintLayout cl = cellLayouts.get(cs.y).get(cs.x);
+
+            if (cs.mode == CellState.Mode.NOTE)
+                setCellNote(userCell, cs.noteValue);
+            else
+                setCellValue(userCell, cs.value);
+
+            // Set highlighting
+            if (!cs.valid)
+                cl.setBackgroundColor(CELL_INVALID_HIGHLIGHT_COLOR);
+            else if (selectedCell.x == cs.x && selectedCell.y == cs.y)
+                cl.setBackgroundColor(CELL_HIGHLIGHTED_COLOR);
+            else
+                cl.setBackground(cellBorder);
+        }
+
+        if (cellStates.size() > 0)
+        {
+            CellState cs = cellStates.get(0);
+            handleCellClick(cs.x, cs.y);
+        }
     }
 }

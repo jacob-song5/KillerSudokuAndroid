@@ -215,13 +215,13 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="20"
-            android:weightSum="120">
+            android:weightSum="100">
 
             <Button
                 android:id="@+id/eraseButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="40"
+                android:layout_weight="25"
                 android:backgroundTint="@color/purple"
                 android:onClick="onEraseClick"
                 android:text="Erase"
@@ -232,7 +232,7 @@
                 android:id="@+id/newGameButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:backgroundTint="@color/purple"
                 android:onClick="onNewGameClick"
                 android:text="New"
@@ -240,13 +240,13 @@
                 app:cornerRadius="0px" />
 
             <Button
-                android:id="@+id/noteButton"
+                android:id="@+id/undoButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="40"
+                android:layout_weight="25"
                 android:backgroundTint="@color/purple"
-                android:onClick="toggleNoteMode"
-                android:text="Note"
+                android:onClick="onUndoClick"
+                android:text="Undo"
                 android:textColor="#FFFFFF"
                 app:cornerRadius="0px" />
 
@@ -254,7 +254,7 @@
                 android:id="@+id/hintButton"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="20"
+                android:layout_weight="25"
                 android:backgroundTint="@color/purple"
                 android:onClick="onHintClick"
                 android:text="Hint"
@@ -265,7 +265,25 @@
         <TableRow
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_weight="60"
+            android:layout_weight="20"
+            android:weightSum="20">
+
+            <Button
+                android:id="@+id/noteButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="20"
+                android:backgroundTint="@color/purple"
+                android:onClick="toggleNoteMode"
+                android:text="Note"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="0px" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="40"
             android:weightSum="120"></TableRow>
 
         <TableRow
