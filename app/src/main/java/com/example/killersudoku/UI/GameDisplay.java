@@ -787,6 +787,23 @@ public class GameDisplay
         }
     }
 
+    private void dehighlightAllCells(Cell userCell)
+    {
+        for (int y = 0; y < 9; ++y)
+        {
+            for (int x = 0; x < 9; ++x)
+            {
+                Cell cell = userBoard.getCell(x, y);
+                // Cell is valid and not the userCell itself
+                if (cell.valid && (x != userCell.x || y != userCell.y))
+                {
+                    ConstraintLayout cl = cellLayouts.get(y).get(x);
+                    cl.setBackground(cellBorder);
+                }
+            }
+        }
+    }
+
     // Used to check if the user set values for all cells of a zone but the total doesn't add up to what the cage sum says it should.
     // Therefore, this returns true if not all cells have been assigned values for the user zone.
     private boolean zoneTotalIsValid(Cell userCell)
@@ -881,6 +898,7 @@ public class GameDisplay
         if (cellStates.size() > 0)
         {
             CellState cs = cellStates.get(0);
+            dehighlightAllCells(userBoard.getCell(cs.x, cs.y));
             handleCellClick(cs.x, cs.y);
         }
     }
